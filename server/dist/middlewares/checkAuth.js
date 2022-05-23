@@ -10,7 +10,7 @@ const checkAuth = ({ context }, next) => {
         if (!accessToken) {
             throw new apollo_server_core_1.AuthenticationError('Not authenticated to perform GRAPHQL operations');
         }
-        const decodedUser = (0, auth_1.decodeToken)(accessToken);
+        const decodedUser = (0, auth_1.decodeToken)('accessToken', accessToken);
         context.user = decodedUser;
         return next();
     }

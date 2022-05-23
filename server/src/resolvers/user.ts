@@ -1,13 +1,18 @@
 import { RegisterInput } from '../types/registerInput';
-import { Arg, Mutation, Resolver } from 'type-graphql';
+import { Arg, Ctx, Mutation, Query, Resolver } from 'type-graphql';
 import { User } from '../entities/User';
 import argon2 from 'argon2';
 import { UserMutationResponse } from '../types/UserMutationResponse';
 import { LoginInput } from '../types/LoginInput';
-import { createToken } from '../utils/auth';
+import { createToken, setRefreshTokenInCookie } from '../utils/auth';
+import { Context } from '../types/Context';
 
 @Resolver()
 export class UserResolver {
+    @Query((_return) => [User])
+    async users(): Promise<User[]> {
+        return await User.find();
+    }
     @Mutation((_return) => UserMutationResponse)
     async register(
         @Arg('registerInput')
@@ -38,37 +43,43 @@ export class UserResolver {
         };
     }
 
-    @Mutation(_return=> UserMutationResponse)
+    @Mutation((_return) => UserMutationResponse)
     async login(
         @Arg('loginInput')
-        loginInput: LoginInput): Promise<UserMutationResponse>{
-        const {username, password} = loginInput;
+        loginInput: LoginInput,
+        @Ctx() { res }: Context
+    ): Promise<UserMutationResponse> {
+        const { username, password } = loginInput;
 
-        const existingUser = await User.findOne({where:{username}});
+        const existingUser = await User.findOne({ where: { username } });
 
-        if(!existingUser){
+        if (!existingUser) {
             return {
                 code: 400,
                 success: false,
-                message: 'Username or password isn\'t correct'
-            }
+                message: "Username or password isn't correct",
+            };
         }
 
-        const isPasswordCorrect = await argon2.verify(existingUser.password, password);
-        if(!isPasswordCorrect){
-             return {
-                 code: 400,
-                 success: false,
-                 message: "Username or password isn't correct",
-             };
+        const isPasswordCorrect = await argon2.verify(
+            existingUser.password,
+            password
+        );
+        if (!isPasswordCorrect) {
+            return {
+                code: 400,
+                success: false,
+                message: "Username or password isn't correct",
+            };
         }
-        
+        setRefreshTokenInCookie(res, existingUser);
+
         return {
             code: 200,
             success: true,
             message: 'Logged In',
             user: existingUser,
-            accessToken: createToken(existingUser)
+            accessToken: createToken('accessToken', existingUser),
         };
     }
 }

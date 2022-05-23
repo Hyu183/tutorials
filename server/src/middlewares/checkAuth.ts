@@ -13,7 +13,7 @@ export const checkAuth: MiddlewareFn<Context> = ({ context }, next) => {
                 'Not authenticated to perform GRAPHQL operations'
             );
         }
-        const decodedUser = decodeToken(accessToken);
+        const decodedUser = decodeToken('accessToken',accessToken);
         context.user = decodedUser;
         return next();
     } catch (error) {

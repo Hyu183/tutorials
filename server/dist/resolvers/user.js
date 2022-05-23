@@ -24,6 +24,9 @@ const UserMutationResponse_1 = require("../types/UserMutationResponse");
 const LoginInput_1 = require("../types/LoginInput");
 const auth_1 = require("../utils/auth");
 let UserResolver = class UserResolver {
+    async users() {
+        return await User_1.User.find();
+    }
     async register(registerInput) {
         const { username, password } = registerInput;
         const existingUser = await User_1.User.findOne({ where: { username } });
@@ -44,14 +47,14 @@ let UserResolver = class UserResolver {
             user: newUser,
         };
     }
-    async login(loginInput) {
+    async login(loginInput, { res }) {
         const { username, password } = loginInput;
         const existingUser = await User_1.User.findOne({ where: { username } });
         if (!existingUser) {
             return {
                 code: 400,
                 success: false,
-                message: 'Username or password isn\'t correct'
+                message: "Username or password isn't correct",
             };
         }
         const isPasswordCorrect = await argon2_1.default.verify(existingUser.password, password);
@@ -62,15 +65,22 @@ let UserResolver = class UserResolver {
                 message: "Username or password isn't correct",
             };
         }
+        (0, auth_1.setRefreshTokenInCookie)(res, existingUser);
         return {
             code: 200,
             success: true,
             message: 'Logged In',
             user: existingUser,
-            accessToken: (0, auth_1.createToken)(existingUser)
+            accessToken: (0, auth_1.createToken)('accessToken', existingUser),
         };
     }
 };
+__decorate([
+    (0, type_graphql_1.Query)((_return) => [User_1.User]),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], UserResolver.prototype, "users", null);
 __decorate([
     (0, type_graphql_1.Mutation)((_return) => UserMutationResponse_1.UserMutationResponse),
     __param(0, (0, type_graphql_1.Arg)('registerInput')),
@@ -79,10 +89,11 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UserResolver.prototype, "register", null);
 __decorate([
-    (0, type_graphql_1.Mutation)(_return => UserMutationResponse_1.UserMutationResponse),
+    (0, type_graphql_1.Mutation)((_return) => UserMutationResponse_1.UserMutationResponse),
     __param(0, (0, type_graphql_1.Arg)('loginInput')),
+    __param(1, (0, type_graphql_1.Ctx)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [LoginInput_1.LoginInput]),
+    __metadata("design:paramtypes", [LoginInput_1.LoginInput, Object]),
     __metadata("design:returntype", Promise)
 ], UserResolver.prototype, "login", null);
 UserResolver = __decorate([
