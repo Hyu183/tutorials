@@ -74,6 +74,27 @@ let UserResolver = class UserResolver {
             accessToken: (0, auth_1.createToken)('accessToken', existingUser),
         };
     }
+    async logout(userId, { res }) {
+        const existingUser = await User_1.User.findOne({ where: { id: userId } });
+        if (!existingUser) {
+            return {
+                code: 400,
+                success: false,
+            };
+        }
+        existingUser.tokenVersion += 1;
+        await existingUser.save();
+        res.clearCookie(process.env.REFRESH_TOKEN_COOKIE_NAME, {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: true,
+            path: '/refresh-token',
+        });
+        return {
+            code: 200,
+            success: true,
+        };
+    }
 };
 __decorate([
     (0, type_graphql_1.Query)((_return) => [User_1.User]),
@@ -96,6 +117,14 @@ __decorate([
     __metadata("design:paramtypes", [LoginInput_1.LoginInput, Object]),
     __metadata("design:returntype", Promise)
 ], UserResolver.prototype, "login", null);
+__decorate([
+    (0, type_graphql_1.Mutation)((_return) => UserMutationResponse_1.UserMutationResponse),
+    __param(0, (0, type_graphql_1.Arg)('userId', (_type) => type_graphql_1.ID)),
+    __param(1, (0, type_graphql_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], UserResolver.prototype, "logout", null);
 UserResolver = __decorate([
     (0, type_graphql_1.Resolver)()
 ], UserResolver);

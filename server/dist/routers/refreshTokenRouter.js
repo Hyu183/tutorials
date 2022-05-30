@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
     try {
         const decodedUser = (0, auth_1.decodeToken)('refreshToken', refreshToken);
         const existingUser = await User_1.User.findOne({ where: { id: decodedUser.userId } });
-        if (!existingUser)
+        if (!existingUser || existingUser.tokenVersion !== decodedUser.tokenVersion)
             return res.sendStatus(401);
         (0, auth_1.setRefreshTokenInCookie)(res, existingUser);
         return res.json({

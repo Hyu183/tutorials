@@ -2,10 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.setRefreshTokenInCookie = exports.decodeToken = exports.createToken = void 0;
 const jsonwebtoken_1 = require("jsonwebtoken");
-const createToken = (type, user) => (0, jsonwebtoken_1.sign)({ userId: user.id }, type === 'accessToken'
+const createToken = (type, user) => (0, jsonwebtoken_1.sign)(Object.assign({ userId: user.id }, (type == 'refreshToken' ? { tokenVersion: user.tokenVersion } : {})), type === 'accessToken'
     ? process.env.ACCESS_TOKEN_SECRET
     : process.env.REFRESH_TOKEN_SECRET, {
-    expiresIn: type === 'accessToken' ? '10s' : '60m',
+    expiresIn: type === 'accessToken' ? '15m' : '60m',
 });
 exports.createToken = createToken;
 const decodeToken = (type, token) => (0, jsonwebtoken_1.verify)(token, type === 'accessToken'

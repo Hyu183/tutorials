@@ -1,5 +1,5 @@
 import { RegisterInput } from '../types/registerInput';
-import { Arg, Ctx, Mutation, Query, Resolver } from 'type-graphql';
+import { Arg, Ctx, ID, Mutation, Query, Resolver } from 'type-graphql';
 import { User } from '../entities/User';
 import argon2 from 'argon2';
 import { UserMutationResponse } from '../types/UserMutationResponse';
@@ -80,6 +80,35 @@ export class UserResolver {
             message: 'Logged In',
             user: existingUser,
             accessToken: createToken('accessToken', existingUser),
+        };
+    }
+
+    @Mutation((_return) => UserMutationResponse)
+    async logout(
+        @Arg('userId', (_type) => ID)
+        userId: number,
+        @Ctx() { res }: Context
+    ): Promise<UserMutationResponse> {
+        const existingUser = await User.findOne({ where: { id: userId } });
+        if (!existingUser) {
+            return {
+                code: 400,
+                success: false,
+            };
+        }
+
+        existingUser.tokenVersion += 1;
+        await existingUser.save();
+        res.clearCookie(process.env.REFRESH_TOKEN_COOKIE_NAME as string, {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: true,
+            path: '/refresh-token',
+        });
+
+        return {
+            code: 200,
+            success: true,
         };
     }
 }
